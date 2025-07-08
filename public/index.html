@@ -31,10 +31,23 @@
 
         <!-- Main Content -->
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Mode Toggle -->
+            <div class="flex justify-center mb-8">
+                <div class="bg-white/10 backdrop-blur-sm rounded-lg p-1 border border-white/20">
+                    <button id="generateModeBtn" class="px-6 py-2 rounded-md text-white bg-purple-600 transition-all">
+                        <i class="fas fa-magic mr-2"></i>Generate
+                    </button>
+                    <button id="inpaintModeBtn" class="px-6 py-2 rounded-md text-gray-300 hover:text-white transition-all">
+                        <i class="fas fa-paint-brush mr-2"></i>Inpaint
+                    </button>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Control Panel -->
                 <div class="lg:col-span-1">
-                    <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                    <!-- Generate Mode Panel -->
+                    <div id="generatePanel" class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
                         <h2 class="text-xl font-semibold text-white mb-6">Generate Your Image</h2>
                         
                         <form id="generateForm" class="space-y-6">
@@ -155,11 +168,129 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Inpaint Mode Panel -->
+                    <div id="inpaintPanel" class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hidden">
+                        <h2 class="text-xl font-semibold text-white mb-6">Inpaint Your Image</h2>
+                        
+                        <form id="inpaintForm" class="space-y-6">
+                            <!-- Image Upload -->
+                            <div>
+                                <label for="imageUpload" class="block text-sm font-medium text-gray-200 mb-2">
+                                    <i class="fas fa-upload mr-2"></i>Upload Image
+                                </label>
+                                <input 
+                                    type="file" 
+                                    id="imageUpload" 
+                                    accept="image/*" 
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700"
+                                    required
+                                >
+                            </div>
+
+                            <!-- Prompt Input -->
+                            <div>
+                                <label for="inpaintPrompt" class="block text-sm font-medium text-gray-200 mb-2">
+                                    <i class="fas fa-pen mr-2"></i>Inpaint Prompt
+                                </label>
+                                <textarea 
+                                    id="inpaintPrompt" 
+                                    name="inpaintPrompt" 
+                                    rows="3" 
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                                    placeholder="What should replace the masked area? (e.g., a beautiful flower, a modern building)"
+                                    required
+                                ></textarea>
+                            </div>
+
+                            <!-- Negative Prompt -->
+                            <div>
+                                <label for="inpaintNegativePrompt" class="block text-sm font-medium text-gray-200 mb-2">
+                                    <i class="fas fa-ban mr-2"></i>Negative Prompt
+                                </label>
+                                <textarea 
+                                    id="inpaintNegativePrompt" 
+                                    name="inpaintNegativePrompt" 
+                                    rows="2" 
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                                    placeholder="What you don't want in the inpainted area..."
+                                ></textarea>
+                            </div>
+
+                            <!-- Inpaint Settings -->
+                            <div class="space-y-4">
+                                <h3 class="text-lg font-medium text-white">Inpaint Settings</h3>
+                                
+                                <!-- Steps -->
+                                <div>
+                                    <label for="inpaintSteps" class="block text-sm font-medium text-gray-200 mb-2">
+                                        Steps: <span id="inpaintStepsValue">30</span>
+                                    </label>
+                                    <input 
+                                        type="range" 
+                                        id="inpaintSteps" 
+                                        name="inpaintSteps" 
+                                        min="10" 
+                                        max="50" 
+                                        value="30" 
+                                        class="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+                                    >
+                                </div>
+
+                                <!-- CFG Scale -->
+                                <div>
+                                    <label for="inpaintCfgScale" class="block text-sm font-medium text-gray-200 mb-2">
+                                        CFG Scale: <span id="inpaintCfgValue">7</span>
+                                    </label>
+                                    <input 
+                                        type="range" 
+                                        id="inpaintCfgScale" 
+                                        name="inpaintCfgScale" 
+                                        min="1" 
+                                        max="20" 
+                                        value="7" 
+                                        step="0.5" 
+                                        class="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+                                    >
+                                </div>
+
+                                <!-- Samples -->
+                                <div>
+                                    <label for="inpaintSamples" class="block text-sm font-medium text-gray-200 mb-2">Number of Variations</label>
+                                    <select id="inpaintSamples" name="inpaintSamples" class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Inpaint Button -->
+                            <button 
+                                type="submit" 
+                                id="inpaintBtn"
+                                class="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                            >
+                                <i class="fas fa-paint-brush mr-2"></i>
+                                <span id="inpaintBtnText">Inpaint Image</span>
+                            </button>
+                        </form>
+
+                        <!-- Inpaint Status -->
+                        <div id="inpaintStatus" class="mt-4 hidden">
+                            <div class="flex items-center space-x-2 text-sm">
+                                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
+                                <span class="text-gray-200">Inpainting your image...</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Image Gallery -->
+                <!-- Image Gallery & Canvas -->
                 <div class="lg:col-span-2">
-                    <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                    <!-- Generate Mode Gallery -->
+                    <div id="generateGallery" class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
                         <div class="flex justify-between items-center mb-6">
                             <h2 class="text-xl font-semibold text-white">Generated Images</h2>
                             <button 
@@ -176,6 +307,57 @@
                                 <div class="text-center text-gray-400">
                                     <i class="fas fa-image text-4xl mb-4"></i>
                                     <p>Your generated images will appear here</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Inpaint Mode Canvas -->
+                    <div id="inpaintCanvas" class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hidden">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-semibold text-white">Inpaint Canvas</h2>
+                            <div class="flex space-x-2">
+                                <button id="clearMaskBtn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+                                    <i class="fas fa-eraser mr-2"></i>Clear Mask
+                                </button>
+                                <button id="undoBtn" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                                    <i class="fas fa-undo mr-2"></i>Undo
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col items-center space-y-4">
+                            <div class="relative">
+                                <canvas id="inpaintCanvasElement" class="border-2 border-white/20 rounded-lg max-w-full" style="max-height: 500px;"></canvas>
+                                <div id="canvasInstructions" class="text-center text-gray-400 mt-4">
+                                    <p>Upload an image, then paint over areas you want to inpaint</p>
+                                    <p class="text-sm">Use the brush to mark areas for inpainting</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Brush Controls -->
+                            <div class="flex items-center space-x-4">
+                                <div>
+                                    <label for="brushSize" class="block text-sm font-medium text-gray-200 mb-2">
+                                        Brush Size: <span id="brushSizeValue">20</span>
+                                    </label>
+                                    <input 
+                                        type="range" 
+                                        id="brushSize" 
+                                        min="5" 
+                                        max="50" 
+                                        value="20" 
+                                        class="w-32 h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+                                    >
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-200 mb-2">Brush Color</label>
+                                    <input 
+                                        type="color" 
+                                        id="brushColor" 
+                                        value="#ff0000" 
+                                        class="w-12 h-8 rounded border border-white/20"
+                                    >
                                 </div>
                             </div>
                         </div>
