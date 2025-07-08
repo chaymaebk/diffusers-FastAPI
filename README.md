@@ -218,3 +218,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ---
 
 **Happy Image Generating! 🎨✨** 
+![Alt text](resultat.png)
+
+
