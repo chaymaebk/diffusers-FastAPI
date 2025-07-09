@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function initCanvas() {
         canvas.width = 512;
         canvas.height = 512;
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = '#000000'; // Fill with black (no inpaint by default)
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         ctx.lineWidth = brushSizeSlider.value;
         ctx.lineCap = 'round';
-        ctx.strokeStyle = brushColorPicker.value;
+        ctx.strokeStyle = '#ffffff'; // Brush color is white
 
         ctx.lineTo(x * scaleX, y * scaleY);
         ctx.stroke();
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
         } else {
-            ctx.fillStyle = '#ffffff';
+            ctx.fillStyle = '#000000'; // Fill with black (no inpaint by default)
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
         undoStack = [];
@@ -294,9 +294,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const r = imageData.data[i];
                 const g = imageData.data[i + 1];
                 const b = imageData.data[i + 2];
-                
-                // If pixel is red (inpaint area), make it white in mask
-                if (r > 200 && g < 100 && b < 100) {
+                // If pixel is white (user painted), make it white in mask
+                if (r > 200 && g > 200 && b > 200) {
                     maskData.data[i] = 255;     // R
                     maskData.data[i + 1] = 255; // G
                     maskData.data[i + 2] = 255; // B
@@ -319,12 +318,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('image', imageBlob, 'image.png');
             formData.append('mask', maskBlob, 'mask.png');
-
-            formData.append('text_prompts[0][text]', prompt);
-            formData.append('text_prompts[0][weight]', '1');
+            formData.append('prompt', prompt);
             if (inpaintNegativePrompt.value.trim()) {
-                formData.append('text_prompts[1][text]', inpaintNegativePrompt.value.trim());
-                formData.append('text_prompts[1][weight]', '-1');
+                formData.append('negative_prompt', inpaintNegativePrompt.value.trim());
             }
             formData.append('cfg_scale', inpaintCfgSlider.value);
             formData.append('samples', inpaintSamplesSelect.value);

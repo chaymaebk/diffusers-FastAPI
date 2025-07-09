@@ -6,6 +6,7 @@ const cors = require('cors');
 const multer = require('multer');
 const fs = require('fs');
 const Jimp = require('jimp');
+const FormData = require('form-data');
 const app = express();
 const PORT = process.env.PORT || 3001;// Configure multer for file uploads
 const upload = multer({
@@ -17,13 +18,12 @@ const upload = multer({
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
 
 // Stability AI API configuration
 const STABILITY_API_KEY = process.env.STABILITY_API_KEY;
 const STABILITY_API_URL = 'https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image';
-const STABILITY_INPAINT_URL = 'https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/image-to-image/masking';
+const STABILITY_INPAINT_URL = 'https://api.stability.ai/v2beta/stable-image/edit/inpaint';
 
 // Routes
 app.get('/', (req, res) => {
@@ -98,7 +98,14 @@ app.post('/api/inpaint-image', upload.fields([
     { name: 'mask', maxCount: 1 }
 ]), async (req, res) => {
     try {
-        const { prompt, negativePrompt, steps, cfgScale, samples } = req.body;
+        // Debug: log req.body to verify received fields
+        console.log('req.body:', req.body);
+        // Use correct field names from req.body
+        const prompt = req.body.prompt || '';
+        const negativePrompt = req.body.negative_prompt || '';
+        const steps = req.body.steps;
+        const cfgScale = req.body.cfg_scale;
+        const samples = req.body.samples;
         const imageFile = req.files['image']?.[0];
         const maskFile = req.files['mask']?.[0];
 
@@ -130,37 +137,78 @@ app.post('/api/inpaint-image', upload.fields([
         maskImageJimp
             .resize(targetWidth, targetHeight)
             .greyscale()
-            .threshold({ max: 128 }); // >128 white, <=128 black
+            .scan(0, 0, targetWidth, targetHeight, function (x, y, idx) {
+                // If pixel is closer to white, set to white; else set to black
+                const value = this.bitmap.data[idx] > 128 ? 255 : 0;
+                this.bitmap.data[idx] = value;
+                this.bitmap.data[idx + 1] = value;
+                this.bitmap.data[idx + 2] = value;
+                this.bitmap.data[idx + 3] = 255; // opaque
+            });
+        await maskImageJimp.writeAsync('debug_mask.png');
         const processedMaskBuffer = await maskImageJimp.getBufferAsync(Jimp.MIME_PNG);
 
         // Create form data for multipart upload
-        const FormData = require('form-data');
         const formData = new FormData();
 
-        // Add text prompts
-        formData.append('text_prompts[0][text]', prompt);
-        formData.append('text_prompts[0][weight]', '1');
-
-        if (negativePrompt) {
-            formData.append('text_prompts[1][text]', negativePrompt);
-            formData.append('text_prompts[1][weight]', '-1');
-        }
-
-        // Add parameters
-        formData.append('cfg_scale', cfgScale || 7);
-        formData.append('samples', samples || 1);
-        formData.append('steps', steps || 30);
-
-        // Add image and processed mask files
-        formData.append('init_image', processedImageBuffer, {
+        // Required fields
+        formData.append('image', processedImageBuffer, {
             filename: 'image.png',
             contentType: 'image/png'
         });
-        formData.append('mask_image', processedMaskBuffer, {
-            filename: 'mask.png',
-            contentType: 'image/png'
-        });
-        formData.append('mask_source', 'MASK_IMAGE_WHITE');
+        formData.append('prompt', prompt);
+
+        // Optional fields
+        if (maskFile) {
+            formData.append('mask', processedMaskBuffer, {
+                filename: 'mask.png',
+                contentType: 'image/png'
+            });
+        }
+        if (negativePrompt) formData.append('negative_prompt', negativePrompt);
+        if (req.body.seed) formData.append('seed', req.body.seed);
+        if (req.body.output_format) {
+            formData.append('output_format', req.body.output_format);
+        } else {
+            formData.append('output_format', 'png');
+        }
+        if (req.body.style_preset) formData.append('style_preset', req.body.style_preset);
+        if (cfgScale) formData.append('cfg_scale', cfgScale);
+        if (steps) formData.append('steps', steps);
+
+        const promptSafe = prompt || '';
+        const negativePromptSafe = negativePrompt || '';
+        console.log('Prompt:', promptSafe);
+        console.log('Negative Prompt:', negativePromptSafe);
+        console.log('Processed image buffer size:', processedImageBuffer.length);
+        console.log('Processed mask buffer size:', processedMaskBuffer.length);
+        // Log FormData fields
+        console.log('FormData fields:');
+        console.log('Type of formData:', typeof formData);
+        console.log('formData constructor:', formData.constructor.name);
+        console.log('formData methods:', Object.getOwnPropertyNames(formData.__proto__));
+        
+        // Alternative logging approach that doesn't rely on forEach
+        try {
+            if (typeof formData.forEach === 'function') {
+                formData.forEach((value, key) => {
+                    if (Buffer.isBuffer(value) || value instanceof Uint8Array) {
+                        console.log(`  ${key}: [binary, length ${value.length}]`);
+                    } else {
+                        console.log(`  ${key}:`, value);
+                    }
+                });
+            } else {
+                console.log('FormData forEach method not available');
+                // Just log that FormData was created successfully
+                console.log('FormData object created successfully');
+                const headers = formData.getHeaders();
+                console.log('FormData headers:', headers);
+            }
+        } catch (error) {
+            console.log('Error logging FormData fields:', error.message);
+        }
+
         const response = await axios.post(STABILITY_INPAINT_URL, formData, {
             headers: {
                 'Authorization': `Bearer ${STABILITY_API_KEY}`,
@@ -169,11 +217,25 @@ app.post('/api/inpaint-image', upload.fields([
             }
         });
 
-        // Convert base64 images to data URLs
-        const images = response.data.artifacts.map(artifact => ({
-            base64: `data:image/png;base64,${artifact.base64}`,
-            seed: artifact.seed
-        }));
+        // Handle v2beta response
+        let images = [];
+        if (response.data.image) {
+            images.push({
+                base64: `data:image/png;base64,${response.data.image}`,
+                seed: response.data.seed
+            });
+        } else if (Array.isArray(response.data.images)) {
+            images = response.data.images.map(img => ({
+                base64: `data:image/png;base64,${img.image}`,
+                seed: img.seed
+            }));
+        } else {
+            // Unexpected response
+            return res.status(500).json({
+                error: 'Unexpected response from Stability API',
+                details: response.data
+            });
+        }
 
         res.json({ 
             success: true, 
