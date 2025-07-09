@@ -114,6 +114,41 @@ Navigate to `http://localhost:3000` in your web browser.
 - **Seed Values**: Each generated image has a seed - you can use this for reproducible results
 - **Multiple Images**: Generate several variations to choose the best one
 
+## 🎭 Inpainting Feature
+
+The application also supports advanced inpainting functionality, allowing you to modify specific parts of existing images while keeping the rest intact.
+
+### How Inpainting Works
+
+1. **Upload an Image**: Switch to "Inpaint Mode" and upload your source image
+2. **Paint the Mask**: Use the brush tool to mark areas you want to modify (painted areas will be replaced)
+3. **Enter Prompt**: Describe what you want to see in the masked areas
+4. **Generate**: Watch as AI seamlessly replaces only the masked regions
+
+### Inpainting Examples
+
+#### Before Inpainting
+![Source Image](source.png)
+*Original image before inpainting*
+
+#### After Inpainting
+![Inpainted Result](image.png)
+*Result after inpainting with AI-generated content*
+
+### Inpainting Tips
+
+- **Precise Masking**: Only paint over areas you want to change
+- **Clear Prompts**: Be specific about what should replace the masked area
+- **Edge Blending**: The AI automatically blends edges for natural-looking results
+- **Multiple Attempts**: Try different prompts or mask sizes for varied results
+
+### Inpainting Controls
+
+- **Brush Size**: Adjust the painting brush size for precise or broad strokes
+- **Clear Mask**: Remove all painted areas to start over
+- **Undo**: Step back through your painting actions
+- **Prompt Settings**: Same advanced controls as text-to-image generation
+
 ## 🔧 Configuration Options
 
 ### Environment Variables
@@ -219,5 +254,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 **Happy Image Generating! 🎨✨** 
 ![Alt text](resultat.png)
-
 
