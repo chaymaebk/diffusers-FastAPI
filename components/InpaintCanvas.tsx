@@ -58,7 +58,9 @@ export default function InpaintCanvas({ onImagesGenerated, isLoading, setIsLoadi
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = (event) => {
+      if (!event.target?.result) return;
+      
       const img = new Image();
       img.onload = () => {
         setOriginalImage(img);
@@ -85,7 +87,7 @@ export default function InpaintCanvas({ onImagesGenerated, isLoading, setIsLoadi
         // Reset undo stack
         setUndoStack([]);
       };
-      img.src = e.target.result as string;
+      img.src = event.target.result as string;
     };
     reader.readAsDataURL(file);
   };
@@ -231,11 +233,17 @@ export default function InpaintCanvas({ onImagesGenerated, isLoading, setIsLoadi
       maskCtx.putImageData(maskData, 0, 0);
       
       // Convert canvases to blobs
-      const imageBlob = await new Promise<Blob>((resolve) => 
-        canvas.toBlob((blob) => resolve(blob!), 'image/png')
+      const imageBlob = await new Promise<Blob>((resolve, reject) => 
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('Failed to create image blob'));
+        }, 'image/png')
       );
-      const maskBlob = await new Promise<Blob>((resolve) => 
-        maskCanvas.toBlob((blob) => resolve(blob!), 'image/png')
+      const maskBlob = await new Promise<Blob>((resolve, reject) => 
+        maskCanvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('Failed to create mask blob'));
+        }, 'image/png')
       );
       
       // Create form data
