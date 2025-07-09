@@ -182,32 +182,9 @@ app.post('/api/inpaint-image', upload.fields([
         console.log('Negative Prompt:', negativePromptSafe);
         console.log('Processed image buffer size:', processedImageBuffer.length);
         console.log('Processed mask buffer size:', processedMaskBuffer.length);
-        // Log FormData fields
-        console.log('FormData fields:');
-        console.log('Type of formData:', typeof formData);
-        console.log('formData constructor:', formData.constructor.name);
-        console.log('formData methods:', Object.getOwnPropertyNames(formData.__proto__));
-        
-        // Alternative logging approach that doesn't rely on forEach
-        try {
-            if (typeof formData.forEach === 'function') {
-                formData.forEach((value, key) => {
-                    if (Buffer.isBuffer(value) || value instanceof Uint8Array) {
-                        console.log(`  ${key}: [binary, length ${value.length}]`);
-                    } else {
-                        console.log(`  ${key}:`, value);
-                    }
-                });
-            } else {
-                console.log('FormData forEach method not available');
-                // Just log that FormData was created successfully
-                console.log('FormData object created successfully');
-                const headers = formData.getHeaders();
-                console.log('FormData headers:', headers);
-            }
-        } catch (error) {
-            console.log('Error logging FormData fields:', error.message);
-        }
+        // Log FormData creation
+        console.log('FormData created successfully');
+        console.log('FormData headers:', formData.getHeaders());
 
         const response = await axios.post(STABILITY_INPAINT_URL, formData, {
             headers: {
