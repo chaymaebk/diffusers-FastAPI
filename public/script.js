@@ -319,11 +319,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('image', imageBlob, 'image.png');
             formData.append('mask', maskBlob, 'mask.png');
-            formData.append('prompt', prompt);
-            formData.append('negativePrompt', inpaintNegativePrompt.value.trim());
-            formData.append('steps', inpaintStepsSlider.value);
-            formData.append('cfgScale', inpaintCfgSlider.value);
+
+            formData.append('text_prompts[0][text]', prompt);
+            formData.append('text_prompts[0][weight]', '1');
+            if (inpaintNegativePrompt.value.trim()) {
+                formData.append('text_prompts[1][text]', inpaintNegativePrompt.value.trim());
+                formData.append('text_prompts[1][weight]', '-1');
+            }
+            formData.append('cfg_scale', inpaintCfgSlider.value);
             formData.append('samples', inpaintSamplesSelect.value);
+            formData.append('steps', inpaintStepsSlider.value);
 
             const response = await fetch('/api/inpaint-image', {
                 method: 'POST',

@@ -1,15 +1,13 @@
+require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
 const path = require('path');
 const cors = require('cors');
 const multer = require('multer');
 const fs = require('fs');
-require('dotenv').config();
-
+const Jimp = require('jimp');
 const app = express();
-const PORT = process.env.PORT || 3001;
-
-// Configure multer for file uploads
+const PORT = process.env.PORT || 3001;// Configure multer for file uploads
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: {
@@ -116,6 +114,25 @@ app.post('/api/inpaint-image', upload.fields([
             });
         }
 
+        // Process and resize image and mask to 1024x1024
+        const targetWidth = 1024;
+        const targetHeight = 1024;
+
+        // For the image
+        const imageBuffer = imageFile.buffer;
+        const imageJimp = await Jimp.read(imageBuffer);
+        imageJimp.resize(targetWidth, targetHeight);
+        const processedImageBuffer = await imageJimp.getBufferAsync(Jimp.MIME_PNG);
+
+        // For the mask
+        const maskBuffer = maskFile.buffer;
+        const maskImageJimp = await Jimp.read(maskBuffer);
+        maskImageJimp
+            .resize(targetWidth, targetHeight)
+            .greyscale()
+            .threshold({ max: 128 }); // >128 white, <=128 black
+        const processedMaskBuffer = await maskImageJimp.getBufferAsync(Jimp.MIME_PNG);
+
         // Create form data for multipart upload
         const FormData = require('form-data');
         const formData = new FormData();
@@ -134,20 +151,21 @@ app.post('/api/inpaint-image', upload.fields([
         formData.append('samples', samples || 1);
         formData.append('steps', steps || 30);
 
-        // Add image and mask files
-        formData.append('init_image', imageFile.buffer, {
+        // Add image and processed mask files
+        formData.append('init_image', processedImageBuffer, {
             filename: 'image.png',
             contentType: 'image/png'
         });
-        formData.append('mask_image', maskFile.buffer, {
+        formData.append('mask_image', processedMaskBuffer, {
             filename: 'mask.png',
             contentType: 'image/png'
         });
-
+        formData.append('mask_source', 'MASK_IMAGE_WHITE');
         const response = await axios.post(STABILITY_INPAINT_URL, formData, {
             headers: {
                 'Authorization': `Bearer ${STABILITY_API_KEY}`,
-                ...formData.getHeaders()
+                ...formData.getHeaders(),
+                'Accept': 'application/json'
             }
         });
 
@@ -164,10 +182,10 @@ app.post('/api/inpaint-image', upload.fields([
         });
 
     } catch (error) {
-        console.error('Error inpainting image:', error.response?.data || error.message);
+        console.error('Error inpainting image:', error.response?.data || error.message || error);
         res.status(500).json({ 
             error: 'Failed to inpaint image',
-            details: error.response?.data || error.message
+            details: error.response?.data || error.message || error
         });
     }
 });
