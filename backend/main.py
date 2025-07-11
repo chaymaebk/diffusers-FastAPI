@@ -64,10 +64,10 @@ def load_models():
         device = "cuda" if torch.cuda.is_available() else "cpu"
         logger.info(f"Using device: {device}")
         
-        # Load text-to-image pipeline
-        logger.info("Loading text-to-image pipeline...")
+        # Load text-to-image pipeline with RealVis 5
+        logger.info("Loading RealVis 5 text-to-image pipeline...")
         text_to_image_pipeline = StableDiffusionPipeline.from_pretrained(
-            "runwayml/stable-diffusion-v1-5",
+            "SG161222/RealVisXL_V4.0",  # RealVis 5 model
             torch_dtype=torch.float16 if device == "cuda" else torch.float32,
             safety_checker=None,
             requires_safety_checker=False
@@ -91,7 +91,7 @@ def load_models():
         # Load inpainting pipeline
         logger.info("Loading inpainting pipeline...")
         inpaint_pipeline = StableDiffusionInpaintPipeline.from_pretrained(
-            "runwayml/stable-diffusion-inpainting",
+            "SG161222/RealVisXL_V4.0",
             torch_dtype=torch.float16 if device == "cuda" else torch.float32,
             safety_checker=None,
             requires_safety_checker=False
@@ -266,6 +266,82 @@ async def inpaint_image(
         
     except Exception as e:
         logger.error(f"Error inpainting image: {str(e)}")
+        return GenerateImageResponse(
+            success=False,
+            images=[],
+            error=str(e)
+        )
+
+@app.post("/api/erase-image", response_model=GenerateImageResponse)
+async def erase_image(
+    image: UploadFile = File(...),
+    mask: UploadFile = File(...),
+    cfg_scale: float = Form(5.0),  # Lower CFG for better object removal
+    samples: int = Form(1),
+    steps: int = Form(25)  # More steps for better erasing
+):
+    """Erase/remove objects from images using RealVisXL"""
+    try:
+        if inpaint_pipeline is None:
+            raise HTTPException(status_code=503, detail="Inpainting model not loaded")
+        
+        logger.info(f"Erasing objects from {samples} image(s)")
+        
+        # Read and process uploaded files
+        image_bytes = await image.read()
+        mask_bytes = await mask.read()
+        
+        # Convert to PIL Images
+        original_image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        mask_image = Image.open(io.BytesIO(mask_bytes)).convert("L")  # Convert to grayscale
+        
+        # Resize images to match pipeline requirements
+        original_image = original_image.resize((512, 512))
+        mask_image = mask_image.resize((512, 512))
+        
+        # Optimized prompts for object removal/erasing
+        erase_prompts = [
+            "clean background, empty space, no objects, smooth surface",
+            "natural background, seamless, clean, object removed",
+            "empty clean space, natural lighting, smooth texture"
+        ]
+        
+        negative_prompts = [
+            "objects, people, animals, text, artifacts, distortions, blurry, low quality"
+        ]
+        
+        images = []
+        for i in range(samples):
+            # Generate a random seed for each image
+            seed = random.randint(0, 2**32 - 1)
+            generator = torch.Generator(device=inpaint_pipeline.device).manual_seed(seed)
+            
+            # Use a random erase prompt for variety
+            prompt = erase_prompts[i % len(erase_prompts)]
+            negative_prompt = negative_prompts[0]
+            
+            # Generate erased image with optimized settings
+            result = inpaint_pipeline(
+                prompt=prompt,
+                image=original_image,
+                mask_image=mask_image,
+                negative_prompt=negative_prompt,
+                num_inference_steps=steps,
+                guidance_scale=cfg_scale,  # Lower CFG for more natural removal
+                generator=generator,
+                num_images_per_prompt=1,
+                strength=0.9  # High strength for better object removal
+            )
+            
+            # Convert to base64
+            image_base64 = pil_to_base64(result.images[0])
+            images.append(ImageResponse(base64=image_base64, seed=seed))
+        
+        logger.info(f"Successfully erased objects from {len(images)} image(s)")
+        return GenerateImageResponse(success=True, images=images)
+        
+    except Exception as e:
+        logger.error(f"Error erasing objects from image: {str(e)}")
         return GenerateImageResponse(
             success=False,
             images=[],
