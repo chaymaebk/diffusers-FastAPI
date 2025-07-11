@@ -128,13 +128,13 @@ The application also supports advanced inpainting functionality, allowing you to
 ### Inpainting Examples
 
 #### 🟢 Before Inpainting
-![Source Image](examples/source-image.png)  
+![Source Image](examples/before.png)
 *Original image before inpainting*
 
 #### 🔵 After Inpainting
-![Inpainted Result](examples/inpainted-result.png)  
+![Inpainted Result](examples/after.png)
+![Alt text](resultat.png)
 *Result after inpainting with AI-generated content*
-
 ### Inpainting Tips
 
 - **Precise Masking**: Only paint over areas you want to change
@@ -253,8 +253,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ---
 
 **Happy Image Generating! 🎨✨** 
-![Alt text](resultat.png)
-
+![Result](examples/resultat.png)
 ### Advanced Tips
 
 - **Better Prompts**: Use descriptive adjectives, specify art styles, lighting, composition
@@ -283,17 +282,6 @@ The application also supports advanced inpainting functionality, allowing you to
 2. **Paint the Mask**: Use the brush tool to mark areas you want to modify (painted areas will be replaced)
 3. **Enter Prompt**: Describe what you want to see in the masked areas
 4. **Generate**: Watch as AI seamlessly replaces only the masked regions
-
-### Inpainting Examples
-
-#### Before Inpainting
-![Source Image](img source.png)
-*Original image before inpainting*
-
-#### After Inpainting
-![Inpainted Result](image.png)
-*Result after inpainting with AI-generated content*
-
 ### Inpainting Tips
 
 - **Precise Masking**: Only paint over areas you want to change
@@ -307,5 +295,3 @@ The application also supports advanced inpainting functionality, allowing you to
 - **Clear Mask**: Remove all painted areas to start over
 - **Undo**: Step back through your painting actions
 - **Prompt Settings**: Same advanced controls as text-to-image generation
-
-## 🔧 Configuration Options

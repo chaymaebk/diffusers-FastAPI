@@ -3,6 +3,5 @@
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
   "/": "pages/index.js",
-  "/api/health": "pages/api/health.js",
-  "/api/inpaint-image": "pages/api/inpaint-image.js"
+  "/api/health": "pages/api/health.js"
 }

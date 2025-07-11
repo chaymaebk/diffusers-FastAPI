@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import Head from 'next/head';
 import ImageGenerator from '../components/ImageGenerator';
 import InpaintCanvas from '../components/InpaintCanvas';
+import EraseCanvas from '../components/EraseCanvas';
 import ImageGallery from '../components/ImageGallery';
 
 interface GeneratedImage {
@@ -10,7 +11,7 @@ interface GeneratedImage {
 }
 
 export default function Home() {
-  const [currentMode, setCurrentMode] = useState<'generate' | 'inpaint'>('generate');
+  const [currentMode, setCurrentMode] = useState<'generate' | 'inpaint' | 'erase'>('generate');
   const [images, setImages] = useState<GeneratedImage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -80,6 +81,17 @@ export default function Home() {
                 <i className="fas fa-paint-brush mr-2"></i>
                 Inpaint
               </button>
+              <button
+                onClick={() => setCurrentMode('erase')}
+                className={`px-6 py-3 rounded-full font-medium transition-all duration-300 ${
+                  currentMode === 'erase'
+                    ? 'bg-red-600 text-white shadow-lg'
+                    : 'text-gray-300 hover:text-white'
+                }`}
+              >
+                <i className="fas fa-eraser mr-2"></i>
+                Erase
+              </button>
             </div>
           </div>
 
@@ -93,8 +105,14 @@ export default function Home() {
                     isLoading={isLoading}
                     setIsLoading={setIsLoading}
                   />
-                ) : (
+                ) : currentMode === 'inpaint' ? (
                   <InpaintCanvas 
+                    onImagesGenerated={handleImagesGenerated}
+                    isLoading={isLoading}
+                    setIsLoading={setIsLoading}
+                  />
+                ) : (
+                  <EraseCanvas 
                     onImagesGenerated={handleImagesGenerated}
                     isLoading={isLoading}
                     setIsLoading={setIsLoading}
