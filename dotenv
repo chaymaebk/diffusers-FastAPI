@@ -1,0 +1,48 @@
+# AI Image Generation Backend Configuration
+# Rename this file to .env to use it
+
+# API Server Configuration
+API_HOST=0.0.0.0
+API_PORT=8000
+API_WORKERS=1
+
+# Hardware Configuration
+# Leave empty for auto-detection, or specify 'cuda' for GPU, 'cpu' for CPU
+DEVICE=
+
+# Model Configuration
+# You can change these to use different models from Hugging Face
+TEXT_TO_IMAGE_MODEL=runwayml/stable-diffusion-v1-5
+INPAINTING_MODEL=runwayml/stable-diffusion-inpainting
+
+# Memory Optimization (for GPU usage)
+# Set to 'true' to enable memory optimizations
+ENABLE_ATTENTION_SLICING=true
+ENABLE_MEMORY_EFFICIENT_ATTENTION=true
+
+# Model Cache Directory
+# Where to store downloaded models (optional)
+# CACHE_DIR=./models_cache
+
+# Logging Configuration
+LOG_LEVEL=info
+
+# CORS Configuration
+# For development, use '*' to allow all origins
+# For production, specify your frontend domain
+CORS_ORIGINS=*
+
+# Image Generation Limits
+MAX_IMAGE_SIZE=1024
+MAX_BATCH_SIZE=4
+MAX_INFERENCE_STEPS=100
+
+# Skip model loading on startup (useful for testing API without GPU)
+SKIP_MODEL_LOADING=false
+
+# Hugging Face Token (optional, for private models)
+# HUGGINGFACE_TOKEN=your_token_here
+
+# Development Mode
+# Set to 'true' for development features
+DEBUG=false 
